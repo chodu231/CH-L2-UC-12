@@ -42,7 +42,7 @@ namespace ShareX
         public List<WatchFolder> WatchFolders { get; private set; }
 
         /// <summary>
-        /// Updates watch folders in the manager.
+        /// Refreshes the list of watch folders. Existing folders are unregistered, and new ones are populated from the program's default settings and each hotkey setting.
         /// </summary>
         public void UpdateWatchFolders()
         {
@@ -88,7 +88,7 @@ namespace ShareX
         }
 
         /// <summary>
-        /// Adds a watch folder to the manager.
+        /// Checks if a watch folder already exists based on it's settings. If not, it adds a new watch folder to the manager based on provided settings and associated task settings.
         /// </summary>
         /// <param name="watchFolderSetting">The settings of the watch folder to add.</param>
         /// <param name="taskSettings">The <see cref="TaskSettings"/> associated with the watch folder.</param>
