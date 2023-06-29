@@ -1,0 +1,529 @@
+Source code documentation for specific C# class file will have to be created. Ensure that markup language named xml, as described in https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/documentation-comments is kept and properly used. All public properties, variables, functions and methods must be described based on information mentioned. Provide summary of what I've written.
+ChatGPT
+
+Certainly, I understand that you need me to create source code documentation for a specific C# class file using the XML markup language as described in the C# language specification documentation comments. It will entail proper usage of XML to document all public properties, variables, functions, and methods based on the provided information. This documentation should give a clear summary and understanding of the code written in the class file.
+
+Please provide the C# class file or details about it, so that I can assist you in writing the source code documentation.
+User
+Create documentation for the following class, class starts after ":", here: using ShareX.HelpersLib;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+
+namespace ShareX
+{
+    public class WatchFolderManager : IDisposable
+    {
+        public List<WatchFolder> WatchFolders { get; private set; }
+
+        public void UpdateWatchFolders()
+        {
+            if (WatchFolders != null)
+            {
+                UnregisterAllWatchFolders();
+            }
+
+            WatchFolders = new List<WatchFolder>();
+
+            foreach (WatchFolderSettings defaultWatchFolderSetting in Program.DefaultTaskSettings.WatchFolderList)
+            {
+                AddWatchFolder(defaultWatchFolderSetting, Program.DefaultTaskSettings);
+            }
+
+            foreach (HotkeySettings hotkeySetting in Program.HotkeysConfig.Hotkeys)
+            {
+                foreach (WatchFolderSettings watchFolderSetting in hotkeySetting.TaskSettings.WatchFolderList)
+                {
+                    AddWatchFolder(watchFolderSetting, hotkeySetting.TaskSettings);
+                }
+            }
+        }
+
+        private WatchFolder FindWatchFolder(WatchFolderSettings watchFolderSetting)
+        {
+            return WatchFolders.FirstOrDefault(watchFolder => watchFolder.Settings == watchFolderSetting);
+        }
+
+        private bool IsExist(WatchFolderSettings watchFolderSetting)
+        {
+            return FindWatchFolder(watchFolderSetting) != null;
+        }
+
+        public void AddWatchFolder(WatchFolderSettings watchFolderSetting, TaskSettings taskSettings)
+        {
+            if (!IsExist(watchFolderSetting))
+            {
+                if (!taskSettings.WatchFolderList.Contains(watchFolderSetting))
+                {
+                    taskSettings.WatchFolderList.Add(watchFolderSetting);
+                }
+
+                WatchFolder watchFolder = new WatchFolder();
+                watchFolder.Settings = watchFolderSetting;
+                watchFolder.TaskSettings = taskSettings;
+
+                watchFolder.FileWatcherTrigger += origPath =>
+                {
+                    TaskSettings taskSettingsCopy = TaskSettings.GetSafeTaskSettings(taskSettings);
+                    string destPath = origPath;
+
+                    if (watchFolderSetting.MoveFilesToScreenshotsFolder)
+                    {
+                        string screenshotsFolder = TaskHelpers.GetScreenshotsFolder(taskSettingsCopy);
+                        string fileName = Path.GetFileName(origPath);
+                        destPath = TaskHelpers.HandleExistsFile(screenshotsFolder, fileName, taskSettingsCopy);
+                        FileHelpers.CreateDirectoryFromFilePath(destPath);
+                        File.Move(origPath, destPath);
+                    }
+
+                    UploadManager.UploadFile(destPath, taskSettingsCopy);
+                };
+
+                WatchFolders.Add(watchFolder);
+
+                if (taskSettings.WatchFolderEnabled)
+                {
+                    watchFolder.Enable();
+                }
+            }
+        }
+
+        public void RemoveWatchFolder(WatchFolderSettings watchFolderSetting)
+        {
+            using (WatchFolder watchFolder = FindWatchFolder(watchFolderSetting))
+            {
+                if (watchFolder != null)
+                {
+                    watchFolder.TaskSettings.WatchFolderList.Remove(watchFolderSetting);
+                    WatchFolders.Remove(watchFolder);
+                }
+            }
+        }
+
+        public void UpdateWatchFolderState(WatchFolderSettings watchFolderSetting)
+        {
+            WatchFolder watchFolder = FindWatchFolder(watchFolderSetting);
+            if (watchFolder != null)
+            {
+                if (watchFolder.TaskSettings.WatchFolderEnabled)
+                {
+                    watchFolder.Enable();
+                }
+                else
+                {
+                    watchFolder.Dispose();
+                }
+            }
+        }
+
+        public void UnregisterAllWatchFolders()
+        {
+            if (WatchFolders != null)
+            {
+                foreach (WatchFolder watchFolder in WatchFolders)
+                {
+                    if (watchFolder != null)
+                    {
+                        watchFolder.Dispose();
+                    }
+                }
+            }
+        }
+
+        public void Dispose()
+        {
+            UnregisterAllWatchFolders();
+        }
+    }
+}
+ChatGPT
+
+Here is the XML-based documentation for your C# class:
+
+csharp
+
+using ShareX.HelpersLib;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+
+namespace ShareX
+{
+    /// <summary>
+    /// Manages watch folders in ShareX application.
+    /// </summary>
+    public class WatchFolderManager : IDisposable
+    {
+        /// <summary>
+        /// Gets the list of WatchFolder objects.
+        /// </summary>
+        public List<WatchFolder> WatchFolders { get; private set; }
+
+        /// <summary>
+        /// Updates watch folders in the manager.
+        /// </summary>
+        public void UpdateWatchFolders()
+        {
+            //...
+        }
+
+        /// <summary>
+        /// Finds a watch folder based on its settings.
+        /// </summary>
+        /// <param name="watchFolderSetting">The settings of the watch folder to find.</param>
+        /// <returns>The WatchFolder if found, else null.</returns>
+        private WatchFolder FindWatchFolder(WatchFolderSettings watchFolderSetting)
+        {
+            //...
+        }
+
+        /// <summary>
+        /// Checks if a watch folder exists based on its settings.
+        /// </summary>
+        /// <param name="watchFolderSetting">The settings of the watch folder to check.</param>
+        /// <returns>True if the watch folder exists, else false.</returns>
+        private bool IsExist(WatchFolderSettings watchFolderSetting)
+        {
+            //...
+        }
+
+        /// <summary>
+        /// Adds a watch folder to the manager.
+        /// </summary>
+        /// <param name="watchFolderSetting">The settings of the watch folder to add.</param>
+        /// <param name="taskSettings">The task settings associated with the watch folder.</param>
+        public void AddWatchFolder(WatchFolderSettings watchFolderSetting, TaskSettings taskSettings)
+        {
+            //...
+        }
+
+        /// <summary>
+        /// Removes a watch folder from the manager.
+        /// </summary>
+        /// <param name="watchFolderSetting">The settings of the watch folder to remove.</param>
+        public void RemoveWatchFolder(WatchFolderSettings watchFolderSetting)
+        {
+            //...
+        }
+
+        /// <summary>
+        /// Updates the state of a watch folder.
+        /// </summary>
+        /// <param name="watchFolderSetting">The settings of the watch folder to update.</param>
+        public void UpdateWatchFolderState(WatchFolderSettings watchFolderSetting)
+        {
+            //...
+        }
+
+        /// <summary>
+        /// Unregisters all watch folders from the manager.
+        /// </summary>
+        public void UnregisterAllWatchFolders()
+        {
+            //...
+        }
+
+        /// <summary>
+        /// Releases all resources used by the WatchFolderManager.
+        /// </summary>
+        public void Dispose()
+        {
+            //...
+        }
+    }
+}
+
+The XML tags above serve different purposes:
+
+    <summary> provides a brief description of the class, property, or method.
+    <param> describes an input parameter of a method.
+    <returns> describes the return value of a method.
+
+Make sure to replace //... with your actual code. Note that private methods and members do not usually need to be documented unless they are complicated and could use an explanation.
+User
+Comments for class interface IDisposable is missing, also add markup reference to all mentions of interfaces and classes in comments, update already existing code block.
+ChatGPT
+
+Certainly, here is the updated code block with documentation comments for the IDisposable interface and the markup reference for all the mentioned classes and interfaces:
+
+csharp
+
+using ShareX.HelpersLib;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+
+namespace ShareX
+{
+    /// <summary>
+    /// Manages watch folders in ShareX application. Implements the <see cref="System.IDisposable"/> interface.
+    /// </summary>
+    public class WatchFolderManager : IDisposable
+    {
+        /// <summary>
+        /// Gets the list of <see cref="WatchFolder"/> objects.
+        /// </summary>
+        public List<WatchFolder> WatchFolders { get; private set; }
+
+        /// <summary>
+        /// Updates watch folders in the manager.
+        /// </summary>
+        public void UpdateWatchFolders()
+        {
+            //...
+        }
+
+        /// <summary>
+        /// Finds a watch folder based on its <see cref="WatchFolderSettings"/>.
+        /// </summary>
+        /// <param name="watchFolderSetting">The settings of the watch folder to find.</param>
+        /// <returns>The <see cref="WatchFolder"/> if found, else null.</returns>
+        private WatchFolder FindWatchFolder(WatchFolderSettings watchFolderSetting)
+        {
+            //...
+        }
+
+        /// <summary>
+        /// Checks if a watch folder exists based on its <see cref="WatchFolderSettings"/>.
+        /// </summary>
+        /// <param name="watchFolderSetting">The settings of the watch folder to check.</param>
+        /// <returns>True if the watch folder exists, else false.</returns>
+        private bool IsExist(WatchFolderSettings watchFolderSetting)
+        {
+            //...
+        }
+
+        /// <summary>
+        /// Adds a watch folder to the manager.
+        /// </summary>
+        /// <param name="watchFolderSetting">The settings of the watch folder to add.</param>
+        /// <param name="taskSettings">The <see cref="TaskSettings"/> associated with the watch folder.</param>
+        public void AddWatchFolder(WatchFolderSettings watchFolderSetting, TaskSettings taskSettings)
+        {
+            //...
+        }
+
+        /// <summary>
+        /// Removes a watch folder from the manager.
+        /// </summary>
+        /// <param name="watchFolderSetting">The settings of the watch folder to remove.</param>
+        public void RemoveWatchFolder(WatchFolderSettings watchFolderSetting)
+        {
+            //...
+        }
+
+        /// <summary>
+        /// Updates the state of a watch folder.
+        /// </summary>
+        /// <param name="watchFolderSetting">The settings of the watch folder to update.</param>
+        public void UpdateWatchFolderState(WatchFolderSettings watchFolderSetting)
+        {
+            //...
+        }
+
+        /// <summary>
+        /// Unregisters all watch folders from the manager.
+        /// </summary>
+        public void UnregisterAllWatchFolders()
+        {
+            //...
+        }
+
+        /// <summary>
+        /// Releases all resources used by the <see cref="WatchFolderManager"/>, 
+        /// and optionally disposes of the managed resources.
+        /// Implements the method from <see cref="System.IDisposable"/>.
+        /// </summary>
+        public void Dispose()
+        {
+            //...
+        }
+    }
+}
+
+The <see cref="classname"/> tag creates a reference to the specified class or interface, which can be useful for generating hyperlinked documentation. The updated comments now contain this markup reference for each mentioned class or interface.
+User
+Keep documentation as it is, now readd code that was replaced with "//..." for easy copy and paste.
+ChatGPT
+
+Sure, here's the complete class with the updated XML documentation:
+
+csharp
+
+using ShareX.HelpersLib;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+
+namespace ShareX
+{
+    /// <summary>
+    /// Manages watch folders in ShareX application. Implements the <see cref="System.IDisposable"/> interface.
+    /// </summary>
+    public class WatchFolderManager : IDisposable
+    {
+        /// <summary>
+        /// Gets the list of <see cref="WatchFolder"/> objects.
+        /// </summary>
+        public List<WatchFolder> WatchFolders { get; private set; }
+
+        /// <summary>
+        /// Updates watch folders in the manager.
+        /// </summary>
+        public void UpdateWatchFolders()
+        {
+            if (WatchFolders != null)
+            {
+                UnregisterAllWatchFolders();
+            }
+
+            WatchFolders = new List<WatchFolder>();
+
+            foreach (WatchFolderSettings defaultWatchFolderSetting in Program.DefaultTaskSettings.WatchFolderList)
+            {
+                AddWatchFolder(defaultWatchFolderSetting, Program.DefaultTaskSettings);
+            }
+
+            foreach (HotkeySettings hotkeySetting in Program.HotkeysConfig.Hotkeys)
+            {
+                foreach (WatchFolderSettings watchFolderSetting in hotkeySetting.TaskSettings.WatchFolderList)
+                {
+                    AddWatchFolder(watchFolderSetting, hotkeySetting.TaskSettings);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Finds a watch folder based on its <see cref="WatchFolderSettings"/>.
+        /// </summary>
+        /// <param name="watchFolderSetting">The settings of the watch folder to find.</param>
+        /// <returns>The <see cref="WatchFolder"/> if found, else null.</returns>
+        private WatchFolder FindWatchFolder(WatchFolderSettings watchFolderSetting)
+        {
+            return WatchFolders.FirstOrDefault(watchFolder => watchFolder.Settings == watchFolderSetting);
+        }
+
+        /// <summary>
+        /// Checks if a watch folder exists based on its <see cref="WatchFolderSettings"/>.
+        /// </summary>
+        /// <param name="watchFolderSetting">The settings of the watch folder to check.</param>
+        /// <returns>True if the watch folder exists, else false.</returns>
+        private bool IsExist(WatchFolderSettings watchFolderSetting)
+        {
+            return FindWatchFolder(watchFolderSetting) != null;
+        }
+
+        /// <summary>
+        /// Adds a watch folder to the manager.
+        /// </summary>
+        /// <param name="watchFolderSetting">The settings of the watch folder to add.</param>
+        /// <param name="taskSettings">The <see cref="TaskSettings"/> associated with the watch folder.</param>
+        public void AddWatchFolder(WatchFolderSettings watchFolderSetting, TaskSettings taskSettings)
+        {
+            if (!IsExist(watchFolderSetting))
+            {
+                if (!taskSettings.WatchFolderList.Contains(watchFolderSetting))
+                {
+                    taskSettings.WatchFolderList.Add(watchFolderSetting);
+                }
+
+                WatchFolder watchFolder = new WatchFolder();
+                watchFolder.Settings = watchFolderSetting;
+                watchFolder.TaskSettings = taskSettings;
+
+                watchFolder.FileWatcherTrigger += origPath =>
+                {
+                    TaskSettings taskSettingsCopy = TaskSettings.GetSafeTaskSettings(taskSettings);
+                    string destPath = origPath;
+
+                    if (watchFolderSetting.MoveFilesToScreenshotsFolder)
+                    {
+                        string screenshotsFolder = TaskHelpers.GetScreenshotsFolder(taskSettingsCopy);
+                        string fileName = Path.GetFileName(origPath);
+                        destPath = TaskHelpers.HandleExistsFile(screenshotsFolder, fileName, taskSettingsCopy);
+                        FileHelpers.CreateDirectoryFromFilePath(destPath);
+                        File.Move(origPath, destPath);
+                    }
+
+                    UploadManager.UploadFile(destPath, taskSettingsCopy);
+                };
+
+                WatchFolders.Add(watchFolder);
+
+                if (taskSettings.WatchFolderEnabled)
+                {
+                    watchFolder.Enable();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Removes a watch folder from the manager.
+        /// </summary>
+        /// <param name="watchFolderSetting">The settings of the watch folder to remove.</param>
+        public void RemoveWatchFolder(WatchFolderSettings watchFolderSetting)
+        {
+            using (WatchFolder watchFolder = FindWatchFolder(watchFolderSetting))
+            {
+                if (watchFolder != null)
+                {
+                    watchFolder.TaskSettings.WatchFolderList.Remove(watchFolderSetting);
+                    WatchFolders.Remove(watchFolder);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Updates the state of a watch folder.
+        /// </summary>
+        /// <param name="watchFolderSetting">The settings of the watch folder to update.</param>
+        public void UpdateWatchFolderState(WatchFolderSettings watchFolderSetting)
+        {
+            WatchFolder watchFolder = FindWatchFolder(watchFolderSetting);
+            if (watchFolder != null)
+            {
+                if (watchFolder.TaskSettings.WatchFolderEnabled)
+                {
+                    watchFolder.Enable();
+                }
+                else
+                {
+                    watchFolder.Dispose();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Unregisters all watch folders from the manager.
+        /// </summary>
+        public void UnregisterAllWatchFolders()
+        {
+            if (WatchFolders != null)
+            {
+                foreach (WatchFolder watchFolder in WatchFolders)
+                {
+                    if (watchFolder != null)
+                    {
+                        watchFolder.Dispose();
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Releases all resources used by the <see cref="WatchFolderManager"/>, 
+        /// and optionally disposes of the managed resources.
+        /// Implements the method from <see cref="System.IDisposable"/>.
+        /// </summary>
+        public void Dispose()
+        {
+            UnregisterAllWatchFolders();
+        }
+    }
+}
+
+This includes XML documentation and the original code. Now, you can copy and paste this block wherever you need.
